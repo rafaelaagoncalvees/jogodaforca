@@ -1,0 +1,96 @@
+/* ------------------------
+   Reset básico
+------------------------ */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: black;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+}
+
+/* ------------------------
+   Container do jogo
+------------------------ */
+#container {
+    text-align: center;
+    background: rgba(255,255,255,0.95);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.4);
+    width: 90%;
+    max-width: 600px;
+}
+
+/* ------------------------
+   Desenho da forca
+------------------------ */
+#forca {
+    font-family: monospace;
+    white-space: pre;
+    font-size: 2em;
+    margin: 20px auto;
+    transition: transform 0.3s;
+}
+
+/* ------------------------
+   Animação quando perde: baloiçar 
+------------------------ */
+#forca.baloiçar-boneco {
+    animation: baloiço-boneco 0.5s infinite alternate;
+}
+
+@keyframes baloiço-boneco {
+    0% { transform: translateY(0) rotate(-10deg); }
+    50% { transform: translateY(-5px) rotate(10deg); }
+    100% { transform: translateY(0) rotate(-10deg); }
+}
+
+/* ------------------------
+   Palavra descoberta
+------------------------ */
+#palavra {
+    font-size: 2em;
+    letter-spacing: 5px;
+    margin-bottom: 20px;
+}
+
+/* ------------------------
+   Mensagens ao utilizador
+------------------------ */
+#info {
+    font-weight: bold;
+    margin: 10px 0;
+    font-size: 1.1em;
+}
+
+/* ------------------------
+   Inputs e botões
+------------------------ */
+input, button {
+    font-size: 1em;
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 8px;
+    border: 1px solid #999;
+}
+
+/* ------------------------
+   Botões
+------------------------ */
+button {
+    cursor: pointer;
+    background-color: #6c5ce7;
+    color: white;
+    border: none;
+}
+
+button:hover {
+    background-color: #341f97;
+}

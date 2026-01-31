@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Jogo da Forca</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div id="container">
+    <h1>Jogo da Forca</h1>
+
+    <!-- Botão para iniciar um novo jogo -->
+    <button id="novoJogoBtn" onclick="novoJogo()">Novo Jogo</button>
+
+    <!-- Desenho da forca (inicialmente escondido) -->
+    <pre id="forca" style="display:none;">
+  +---+
+      |
+      |
+      |
+      |
+=========
+</pre>
+
+    <!-- Palavra descoberta ou palavra completa ao fim do jogo -->
+    <div id="palavra"></div>
+
+    <!-- Mensagem ao utilizador -->
+    <div id="info">Clique em "Novo Jogo" para começar!</div>
+
+    <!-- Input para letras e botão jogar, inicialmente escondidos -->
+    <div id="inputContainer" style="display:none;">
+        <input type="text" id="letra" maxlength="1" placeholder="Digite uma letra">
+        <button onclick="jogar()">Jogar</button>
+    </div>
+</div>
+
+<script>
+// ------------------------
+// Variáveis globais
+// ------------------------
+let jogo_id = "";
+
+// ------------------------
+// Desenhos da forca por número de erros
+// ------------------------
+const partes_forca = [
+`  +---+
+      |
+      |
+      |
+      |
+=========`,
+`  +---+
+  😃   |
+      |
+      |
+      |
+=========`,
+`  +---+
+  😐   |
+  |    |
+      |
+      |
+=========`,
+`  +---+
+  😟   |
+ /|    |
+      |
+      |
+=========`,
+`  +---+
+  😨   |
+ /|\\   |
+      |
+      |
+=========`,
+`  +---+
+  😱   |
+ /|\\   |
+ /     |
+      |
+=========`,
+`  +---+
+  💀   |
+ /|\\   |
+ / \\   |
+=========`
+];
+
+// ------------------------
+// Função para iniciar um novo jogo
+// ------------------------
+async function novoJogo() {
+    // Chamada POST ao backend Flask para criar novo jogo
+    const res = await fetch("/novo_jogo", {method:"POST"});
+    const data = await res.json();
+
+    // Guarda o ID do jogo
+    jogo_id = data.jogo_id;
+
+    // Mostra a palavra com "_" e espaços
+    document.getElementById("palavra").innerText = data.descoberta.join(" ");
+
+    // Atualiza a forca para o estado inicial
+    atualizarForca(0);
+
+    // Mostra input e forca
+    document.getElementById("forca").style.display = "block";
+    document.getElementById("inputContainer").style.display = "block";
+
+    // Mensagem inicial
+    document.getElementById("info").innerText = "Adivinha a palavra!";
+}
+
+// ------------------------
+// Função para jogar uma letra
+// ------------------------
+async function jogar() {
+    const letraInput = document.getElementById("letra");
+    const letra = letraInput.value.toLowerCase();
+    letraInput.value = "";
+
+    // Validação: apenas letras
+    if (!letra.match(/^[a-zA-Z]$/)) {
+        document.getElementById("info").innerText = "❌ Apenas letras são permitidas!";
+        return;
+    }
+
+    // Envia a letra para o backend
+    const res = await fetch("/jogar", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({jogo_id: jogo_id, letra: letra})
+    });
+    const data = await res.json();
+
+    // Atualiza a palavra descoberta
+    document.getElementById("palavra").innerText = data.descoberta.join(" ");
+
+    // Verifica se a letra já foi usada
+    if(data.letras_usadas.filter(l => l===letra).length > 1) {
+        document.getElementById("info").innerText = `⚠️ A letra '${letra}' já foi usada!`;
+    } else {
+        document.getElementById("info").innerText = `Letras usadas: ${data.letras_usadas.join(", ")}`;
+    }
+
+    // Atualiza desenho da forca
+    atualizarForca(data.erros);
+
+    // Verifica fim de jogo
+    if(data.palavra) {
+        // Mostra palavra completa
+        document.getElementById("palavra").innerText = data.palavra;
+
+        if(data.erros >= partes_forca.length-1){
+            // Derrota: baloiçar apenas o boneco
+            document.getElementById("forca").classList.add("baloiçar-boneco");
+            document.getElementById("info").innerHTML = 
+                `💀 Perdeste! A palavra era: <strong>${data.palavra}</strong><br>
+                Clique em 'Novo Jogo' para jogar novamente!`;
+        } else {
+            // Vitória
+            document.getElementById("info").innerHTML = 
+                `🎉 Parabéns! Descobriste a palavra: <strong>${data.palavra}</strong><br>
+                Clique em 'Novo Jogo' para jogar novamente!`;
+        }
+
+        // Esconde input e botão jogar
+        document.getElementById("inputContainer").style.display = "none";
+    }
+}
+
+// ------------------------
+// Função para atualizar o desenho da forca
+// ------------------------
+function atualizarForca(erros) {
+    const forca_elem = document.getElementById("forca");
+    const index = Math.min(erros, partes_forca.length-1);
+    forca_elem.innerText = partes_forca[index];
+
+    // Remove animação se ainda não perdeu
+    if(index < partes_forca.length-1){
+        forca_elem.classList.remove("baloiçar-boneco");
+    }
+}
+</script>
+</body>
+</html>
