@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Jogo da Forca</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div id="container">
+    <h1>Jogo da Forca</h1>
+
+    <!-- Botão para iniciar novo jogo -->
+    <button id="novoJogoBtn" onclick="novoJogo()">Novo Jogo</button>
+
+    <!-- Forca e boneco (invisível no início) -->
+    <div id="forca-container" style="display:none;">
+        <!-- Estrutura da forca -->
+        <div class="poste-base"></div>
+        <div class="poste-vertical"></div>
+        <div class="poste-horizontal"></div>
+        <div class="corda"></div>
+
+        <!-- Boneco -->
+        <div class="cabeca">😃</div>
+        <div class="tronco"></div>
+        <div class="braco-esquerdo"></div>
+        <div class="braco-direito"></div>
+        <div class="perna-esquerda"></div>
+        <div class="perna-direita"></div>
+    </div>
+
+    <!-- Palavra descoberta -->
+    <div id="palavra"></div>
+
+    <div id="info">Clique em "Novo Jogo" para começar!</div>
+
+    <!-- Input para letras -->
+    <div id="inputContainer" style="display:none;">
+        <input type="text" id="letra" maxlength="1" placeholder="Digite uma letra" oninput="this.value = this.value.replace(/[^a-zA-Z]/,'')">
+        <button onclick="jogar()">Jogar</button>
+    </div>
+</div>
+
+<script>
+// ------------------------
+// Variáveis globais
+// ------------------------
+let jogo_id = "";
+const cabecaEmojis = ["😃", "😐", "😟", "😨", "😱", "💀"];
+
+// ------------------------
+// Inicia novo jogo
+// ------------------------
+async function novoJogo() {
+    const res = await fetch("/novo_jogo", {method:"POST"});
+    const data = await res.json();
+    jogo_id = data.jogo_id;
+
+    document.getElementById("palavra").innerText = data.descoberta.join(" ");
+    atualizarForca(0);
+
+    // Mostra forca e input
+    document.getElementById("forca-container").style.display = "block";
+    document.getElementById("inputContainer").style.display = "block";
+    document.getElementById("info").innerText = "Adivinha a palavra!";
+}
+
+// ------------------------
+// Jogar letra
+// ------------------------
+async function jogar() {
+    const letraInput = document.getElementById("letra");
+    const letra = letraInput.value.toLowerCase();
+    letraInput.value = "";
+
+    if (!letra.match(/^[a-z]$/)) {
+        document.getElementById("info").innerText = "❌ Apenas letras são permitidas!";
+        return;
+    }
+
+    const res = await fetch("/jogar", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({jogo_id: jogo_id, letra: letra})
+    });
+    const data = await res.json();
+
+    document.getElementById("palavra").innerText = data.descoberta.join(" ");
+    document.getElementById("info").innerText = `Letras usadas: ${data.letras_usadas.join(", ")}`;
+
+    atualizarForca(data.erros);
+
+    if(data.palavra){
+        document.getElementById("palavra").innerText = data.palavra;
+        document.getElementById("inputContainer").style.display = "none";
+
+        if(data.erros >= 6){
+            // Adiciona animação de baloiço apenas ao boneco
+            const partes = document.querySelectorAll(".cabeca, .tronco, .braco-esquerdo, .braco-direito, .perna-esquerda, .perna-direita");
+            partes.forEach(p => p.classList.add("baloiço-boneco"));
+
+            document.getElementById("info").innerHTML = 
+                `💀 Perdeste! A palavra era: <strong>${data.palavra}</strong>`;
+        } else {
+            document.getElementById("info").innerHTML = 
+                `🎉 Parabéns! Descobriste a palavra: <strong>${data.palavra}</strong>`;
+        }
+    }
+}
+
+// ------------------------
+// Atualiza boneco conforme erros
+// ------------------------
+function atualizarForca(erros) {
+    const partes = [
+        ".cabeca",
+        ".tronco",
+        ".braco-esquerdo",
+        ".braco-direito",
+        ".perna-esquerda",
+        ".perna-direita"
+    ];
+
+    partes.forEach((classe, index) => {
+        const elem = document.querySelector(classe);
+        if (index < erros) {
+            elem.classList.add("mostrar");
+        } else {
+            elem.classList.remove("mostrar");
+            elem.classList.remove("baloiço-boneco"); // remove animação se ainda não perdeu
+        }
+    });
+
+    // Atualiza emoji da cabeça
+    const cabeca = document.querySelector(".cabeca");
+    if(erros > 0) cabeca.innerText = cabecaEmojis[Math.min(erros-1, cabecaEmojis.length - 1)];
+}
+</script>
+</body>
+</html>
