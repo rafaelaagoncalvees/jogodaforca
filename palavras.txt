@@ -1,0 +1,10 @@
+python
+programa
+desafio
+jogo
+computador
+teclado
+mouse
+internet
+algoritmo
+variavel
